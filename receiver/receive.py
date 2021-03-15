@@ -62,18 +62,20 @@ class Receiver:
         }
     ]
 
+    # frame_receiver is function to call after a new frame is received
     def __init__(self, frame_receiver=None, initial=States.UNKNOWN):
 
         self.frame = None
         self.frame_receiver = frame_receiver
         self.frame_buffer = bytearray()
-        # logging.getLogger('transitions').addHandler(logging.NullHandler())
         self.machine = Machine(model=self,
                                states=Receiver.States,
                                transitions=self.transitions,
                                send_event=True,
                                initial=initial)
 
+    # when the frame starts, create a Frame from previous buffer
+    # and send to callback function
     def on_enter_START(self, event):
         if self.frame_buffer:
             self.frame = Frame(self.frame_buffer)
@@ -81,17 +83,17 @@ class Receiver:
                 self.frame_receiver(self.frame)
         self.frame_buffer = bytearray()
 
-    def on_enter_WAIT(self, event):
-        self.frame = self.frame_buffer
-
+    # store the received data
     def on_enter_DATA(self, event):
         self.frame_buffer.append(event.kwargs.get('rcvd')[0])
 
+    # process the received byte
     def process(self, value):
 
         pre_state = self.state
         v = int.from_bytes(value, byteorder='big')
 
+        # 0 and 255 are special cases; they are possibly data but could signal frame markers
         if v == 0x00:
             self.receive_zero(rcvd=b'\x00')
         elif v == 0xFF:
@@ -102,4 +104,5 @@ class Receiver:
             raise InvalidByte("value is 0x{:02X}".format(v))
 
         post_state = self.state
+        # note : if 'v' coincides with an ASCII character, that'll print instead
         logger.debug("rcv: 0x{:02X} pre: {} post: {}".format(v, pre_state, post_state))

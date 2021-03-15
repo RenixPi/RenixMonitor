@@ -25,7 +25,7 @@ class Pressure:
         if units == Pressure.KPA:       # range 11 -> 105
             return raw / 2.7 + 11
         if units == Pressure.PSI:
-            return raw / 18.6 + 1.5
+            return raw / 18.6 + 1.5     # range 1.5 -> 15.2
         
         raise UnitException("incorrect pressure unit: {}".format(units))
 

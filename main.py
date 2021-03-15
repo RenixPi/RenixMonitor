@@ -10,6 +10,37 @@ from publish import publish_frame
 logging.config.dictConfig(loggers)
 
 
+#  RENIX 4.0L
+#
+#                                                                     SUPPLY
+#                                                                       |
+#                                        SUPPLY                         \
+#                                          |                            / PULL
+#                             DIAGNOSTIC   |                            \ UP
+#                             CONNECTOR    |                            /
+#                                |         \                            |       R 1K
+#                                V         / PULL                       +------/\/\/\-------
+#                                          \ UP                         |                 ^
+#    12V ----------------------- D4        /                            |c                |
+#                                          |              R 1K       b /                  |
+#                       +------- D1 -------+-------------/\/\/\-------| 2N2309          UART
+#                       |                           ^                  \                SIGNAL
+#                       |c                          |                   |e
+#                    b /                            |                   |
+#     ECU ------------|                          INVERTED              GND
+#                      \                         SERIAL
+#                       |e                       SIGNAL
+#                       +------- D7
+#                       |
+#                      GND
+#
+# D1 is an open collector to ground, allowing SUPPLY to any voltage needed for receiver (eg 3.3V or 5V)
+# If voltage spike on supply is a concern, use opto-isolator on the inverted serial signal
+# R 1K are current limiting resistors to prevent transistor or receiver from overloading
+# Diagnostic connector uses standard (molex) 0.093" automotive pins
+# Receiver can be anything that support UART : FTDI serial cable, arduino, esp8266/32 or raspberrypi
+
+
 # main loop
 # open the serial interface, create a receive.Receiver
 def start_receiving(interface):

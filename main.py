@@ -5,33 +5,22 @@ from time import sleep
 from config import loggers
 import logging.config
 import logging
-import json
-from paho.mqtt.publish import single
+from publish import publish_frame
 
 logging.config.dictConfig(loggers)
 
 
-def publish_frame(frame):
-    logger = logging.getLogger('ecu.publish')
-    logger.info("new frame received")
-    info = {
-        'rpm': frame.rpm,
-        'coolantTemp': frame.coolantTemp,
-        'batteryVoltage': frame.volts12,
-        'map': frame.map,
-        'throttle': frame.throttlePosition,
-    }
-
-    single("ecu", json.dumps(info))
-
-
+# main loop
+# open the serial interface, create a receive.Receiver
 def start_receiving(interface):
 
     s = serial.Serial(interface, baudrate=62500)
     r = Receiver(frame_receiver=publish_frame)
 
     while True:
+        # check if there's data
         while s.in_waiting:
+            # read data and then send for processing
             b = s.read(1)
             r.process(b)
 
@@ -40,8 +29,10 @@ def start_receiving(interface):
 
 if __name__ == "__main__":
 
+    # require a serial interface as a parameter
     parser = argparse.ArgumentParser()
     parser.add_argument('interface')
     args = parser.parse_args()
 
+    # begin receiving data
     start_receiving(args.interface)

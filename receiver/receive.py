@@ -24,6 +24,7 @@ class Receiver:
         WAIT = 4
         ERROR = 5
 
+    # https://github.com/pytransitions/transitions
     transitions = [
         {
             'trigger': 'receive_mark',

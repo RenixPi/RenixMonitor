@@ -15,5 +15,7 @@ def publish_frame(frame):
         'throttle': frame.throttlePosition,
     }
 
-    # TODO : add credential
+    # send to MQTT server
+    # https://tewarid.github.io/2019/04/03/installing-and-configuring-the-mosquitto-mqtt-broker.html
+    # TODO : add credentials
     single("ecu", json.dumps(info))

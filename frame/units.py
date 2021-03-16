@@ -45,14 +45,14 @@ class Temperature:
         raise UnitException("incorrect temperature unit: {}".format(units))
 
 
-class Volts12:
+class Battery:
 
     @staticmethod
     def convert(raw):
         return raw / 16.24                  # range 0 -> 15.7
 
 
-class Volts5:
+class O2:
 
     @staticmethod
     def convert(raw):
@@ -80,21 +80,21 @@ class ThrottlePosition:
 
     @staticmethod
     def convert(raw):
-        return raw / 2.55 # percentage 0 -> 100
+        return raw / 2.55       # percentage 0 -> 100
 
 
 class SparkAdvance:
 
     @staticmethod
     def convert(raw):
-        return raw # degrees range 0 -> 255
+        return raw              # degrees range 0 -> 255
 
 
 def bitRead(raw, bit):
     return (raw >> bit) & b'0x1'
 
 
-class IgnitionTiming:
+class IdleAirControl:
 
     @staticmethod
     def convert(raw):

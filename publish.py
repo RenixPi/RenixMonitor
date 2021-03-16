@@ -18,4 +18,7 @@ def publish_frame(frame):
     # send to MQTT server
     # https://tewarid.github.io/2019/04/03/installing-and-configuring-the-mosquitto-mqtt-broker.html
     # TODO : add credentials
-    single("ecu", json.dumps(info))
+    try:
+        single("ecu", json.dumps(info))
+    except ConnectionRefusedError:
+        print("could not connect to mqtt")

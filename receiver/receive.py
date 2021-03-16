@@ -3,6 +3,8 @@ from frame import Frame
 import enum
 import logging
 
+from frame.frame import ImproperFrameSize
+
 logger = logging.getLogger('ecu.receiver')
 
 
@@ -58,7 +60,7 @@ class Receiver:
         },
         {
             'trigger': 'receive_value',
-            'source': States.UNKNOWN,
+            'source': [States.UNKNOWN, States.MARK],
             'dest': States.UNKNOWN
         }
     ]
@@ -79,9 +81,13 @@ class Receiver:
     # and send to callback function
     def on_enter_START(self, event):
         if self.frame_buffer:
-            self.frame = Frame(self.frame_buffer)
-            if self.frame_receiver:
-                self.frame_receiver(self.frame)
+            try:
+                self.frame = Frame(self.frame_buffer)
+            except ImproperFrameSize as e:
+                logging.warning(e)
+            else:
+                if self.frame_receiver:
+                    self.frame_receiver(self.frame)
         self.frame_buffer = bytearray()
 
     # store the received data

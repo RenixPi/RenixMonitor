@@ -1,4 +1,17 @@
-from .units import Pressure, Temperature, Volts12, Volts5, RevPerMinute, ThrottlePosition
+from .units import Pressure, Temperature, Battery, O2, RevPerMinute, ThrottlePosition, SparkAdvance, IdleAirControl
+from .units import bitRead
+import logging
+
+
+logger = logging.getLogger('ecu.frame')
+
+
+class ImproperFrameSize(Exception):
+    pass
+
+
+class InvalidInjectorIndex(Exception):
+    pass
 
 
 class Frame:
@@ -11,12 +24,12 @@ class Frame:
     MAP = 3
     CTS = 4
     IAT = 5
-    VOLTS12 = 6
-    VOLTS5 = 7
+    BATTERY = 6
+    O2 = 7
     RPM_L = 8
     RPM_U = 9
-    # 10 ? INJECTOR_ERROR
-    # 11 ? INJECTOR_ERROR
+    INJECTOR_SHORT = 10
+    INJECTOR_OPEN = 11
     TPS = 12
     SPARK_ADV = 13
     IAC = 14
@@ -37,8 +50,19 @@ class Frame:
     STARTER = 29
     # 30 ? Error Codes
 
+    injector_map = {
+        "injector 1": 2,
+        "injector 2": 6,
+        "injector 3": 4,
+        "injector 4": 7,
+        "injector 5": 3,
+        "injector 6": 5
+    }
+
     def __init__(self, _frame):
         self.frame = _frame
+        if len(self.frame) < 30:
+            raise ImproperFrameSize("frame is undersized : {} bytes".format(len(self.frame)))
 
     def _convert(self, Conversion, location):
         return Conversion.convert(self.frame[location])
@@ -56,12 +80,12 @@ class Frame:
         return self._convert(Temperature, Frame.IAT)
 
     @property
-    def volts12(self):
-        return self._convert(Volts12, Frame.VOLTS12)
+    def voltage(self):
+        return self._convert(Battery, Frame.BATTERY)
 
     @property
-    def volts5(self):
-        return self._convert(Volts5, Frame.VOLTS5)
+    def o2(self):
+        return self._convert(O2, Frame.O2)
 
     @property
     def rpm(self):
@@ -77,15 +101,28 @@ class Frame:
         return self._convert(SparkAdvance, Frame.SPARK_ADV)
 
     @property
-    def ignitionTiming(self):
-        return self._convert(IgnitionTiming, Frame.IAC)
+    def idleAirControl(self):
+        return self._convert(IdleAirControl, Frame.IAC)
 
     # barometric pressure before engine start
     @property
-    def mapInitial(self):
+    def atmosphere(self):
         return self._convert(Pressure, Frame.MAP_INITIAL)
 
     @property
     def vacuum(self):
-        return self.mapInitial - self.map
+        return self.atmosphere - self.map
+
+    @property
+    def isInjectorShort(self, num):
+        if num < 1 or num > 6:
+            raise InvalidInjectorIndex("{}".format(num))
+        return bitRead(self.frame[Frame.INJECTOR_SHORT], self.injector_map["injector {}".format(num)])
+
+    @property
+    def isInjectorOpen(self, num):
+        if num < 1 or num > 6:
+            raise InvalidInjectorIndex("{}".format(num))
+        return bitRead(self.frame[Frame.INJECTOR_OPEN], self.injector_map["injector {}".format(num)])
+
 

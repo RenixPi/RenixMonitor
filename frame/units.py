@@ -120,3 +120,13 @@ class IdleAirControl:
 
         # number / 10 roughly keeps track of iac rotations
         return iac_count / 10
+
+
+class InjectorPulse:
+
+    @staticmethod
+    def convert(raw):
+        # pulse width in milliseconds (0 -> 32.7)
+        return raw * 0.128
+
+

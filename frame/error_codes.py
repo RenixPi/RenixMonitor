@@ -1,0 +1,16 @@
+from enum import Enum
+
+
+class ErrorCodes(Enum):
+    INJECTOR_NO_12V = 1
+    INJECTOR_HOT_12V = 2
+    INJECTOR_NO_GND = 3
+    INJECTOR_SHORT = 4
+    INJECTOR_OPEN = 5
+    WATER_TEMP_SENSOR = 6
+    FUEL_NOT_PRIMED = 7
+    ICM_SIGNAL_OPEN = 8
+    EGR_SOLENOID_OPEN = 9
+    BPLUS_RELAY_OPEN = 10
+    O2_RELAY_OPEN = 11
+    AC_RELAY_OPEN = 12

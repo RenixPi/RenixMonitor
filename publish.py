@@ -10,9 +10,15 @@ def publish_frame(frame):
     info = {
         'rpm': frame.rpm,
         'coolantTemp': frame.coolantTemp,
-        'batteryVoltage': frame.volts12,
+        'intakeAirTemp': frame.airIntakeTemp,
+        'batteryVoltage': frame.battery,
         'map': frame.map,
-        'throttle': frame.throttlePosition,
+        'atmosphere': frame.vacuum,
+        'throttlePosition': frame.throttlePosition,
+        'sparkAdvance': frame.sparkAdvance,
+        'injectorPulse': frame.injectorPulse,
+        'injectorDuty': frame.injectorDuty,
+        'gph': frame.gph
     }
 
     # send to MQTT server

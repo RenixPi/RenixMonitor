@@ -1,5 +1,5 @@
 from .units import Pressure, Temperature, Battery, O2, RevPerMinute, ThrottlePosition, SparkAdvance, IdleAirControl
-from .units import bitRead
+from .units import bitRead, InjectorPulse
 import logging
 
 
@@ -33,17 +33,17 @@ class Frame:
     TPS = 12
     SPARK_ADV = 13
     IAC = 14
-    MAP_INITIAL = 15
-    ENGINE = 16
+    # 15 ?
+    ATMOSPHERE = 16
     # 17 ?
     EXHAUST = 18
-    INJECTOR = 19
+    INJECTOR_PULSE = 19
     # 20 ?
     THROTTLE = 21
     SPARK = 22
     # 23 ?
     SHORT_FUEL = 24
-    # 25 ?
+    # 25 IAT Target Offset?
     LONG_FUEL = 26
     KNOCK = 27
     # 28 ?
@@ -107,7 +107,7 @@ class Frame:
     # barometric pressure before engine start
     @property
     def atmosphere(self):
-        return self._convert(Pressure, Frame.MAP_INITIAL)
+        return self._convert(Pressure, Frame.ATMOSPHERE)
 
     @property
     def vacuum(self):
@@ -125,4 +125,52 @@ class Frame:
             raise InvalidInjectorIndex("{}".format(num))
         return bitRead(self.frame[Frame.INJECTOR_OPEN], self.injector_map["injector {}".format(num)])
 
+    @property
+    def exhaust(self):
+        raise NotImplementedError("rich / lean not yet implemented")
 
+    @property
+    def injectorPulse(self):
+        return self._convert(InjectorPulse, Frame.INJECTOR_PULSE)
+
+    @property
+    def injectorDuty(self):
+        return (self.rpm * self.injectorPulse) / 1200
+
+    injector_flow_rate = 18.927             # 4L engine
+
+    @property
+    def gph(self):
+        return self.injector_flow_rate * self.injectorDuty
+
+    @property
+    def shortFuelTrim(self):
+        raise NotImplementedError("short fuel trim not implemented")
+
+    @property
+    def longFuelTrim(self):
+        raise NotImplementedError("long fuel trim not implemented")
+
+    @property
+    def knock(self):
+        raise NotImplementedError("knock sensor not implemented")
+
+    @property
+    def fuelSync(self):
+        raise NotImplementedError("fuel sync not implemented")
+
+    @property
+    def starter(self):
+        raise NotImplementedError("starter not implemented")
+
+    @property
+    def acSwitch(self):
+        raise NotImplementedError("a/c switch not implemented")
+
+    @property
+    def acRequest(self):
+        raise NotImplementedError("a/c request not implemented")
+
+    @property
+    def nss(self):
+        raise NotImplementedError("nss not implemented")

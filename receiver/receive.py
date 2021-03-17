@@ -3,9 +3,14 @@ from frame import Frame
 import enum
 import logging
 
-from frame.frame import ImproperFrameSize
+from frame.frame import ImproperFrameSize, FourLiterFrame, TwoPointFiveLiterFrame
 
 logger = logging.getLogger('ecu.receiver')
+
+
+class ECUType(enum.Enum):
+    FourLiter = 1
+    TwoPointFiveLiter = 2
 
 
 class EmptyFrame(Exception):
@@ -17,6 +22,13 @@ class InvalidByte(Exception):
 
 
 class Receiver:
+
+    ecu_type = None
+
+    ecu_type_frame_map = {
+        ECUType.FourLiter: FourLiterFrame,
+        ECUType.TwoPointFiveLiter: TwoPointFiveLiterFrame
+    }
 
     class States(enum.Enum):
         UNKNOWN = 0
@@ -66,11 +78,17 @@ class Receiver:
     ]
 
     # frame_receiver is function to call after a new frame is received
-    def __init__(self, frame_receiver=None, initial=States.UNKNOWN):
+    def __init__(self, ecu_type, frame_receiver=None, initial=States.UNKNOWN):
+
+        if ecu_type not in self.ecu_type_frame_map:
+            raise NotImplementedError("ecu type not implemented")
+
+        self.frame_type = self.ecu_type_frame_map[ecu_type]
+        self.frame_receiver = frame_receiver
 
         self.frame = None
-        self.frame_receiver = frame_receiver
         self.frame_buffer = bytearray()
+
         self.machine = Machine(model=self,
                                states=Receiver.States,
                                transitions=self.transitions,
@@ -82,7 +100,7 @@ class Receiver:
     def on_enter_START(self, event):
         if self.frame_buffer:
             try:
-                self.frame = Frame(self.frame_buffer)
+                self.frame = self.frame_type(self.frame_buffer)
             except ImproperFrameSize as e:
                 logging.warning(e)
             else:

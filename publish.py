@@ -18,7 +18,8 @@ def publish_frame(frame):
         'sparkAdvance': frame.sparkAdvance,
         'injectorPulse': frame.injectorPulse,
         'injectorDuty': frame.injectorDuty,
-        'gph': frame.gph
+        'gph': frame.gph,
+        'errors': frame.errors()
     }
 
     # send to MQTT server

@@ -1,3 +1,6 @@
+from abc import ABC
+
+from .error_codes import ErrorCodes
 from .units import Pressure, Temperature, Battery, O2, RevPerMinute, ThrottlePosition, SparkAdvance, IdleAirControl
 from .units import bitRead, InjectorPulse
 import logging
@@ -14,7 +17,12 @@ class InvalidInjectorIndex(Exception):
     pass
 
 
-class Frame:
+# create abstract base class for different engine ecu
+class Frame(ABC):
+    pass
+
+
+class FourLiterFrame(Frame):
 
     frame = None
 
@@ -38,7 +46,7 @@ class Frame:
     # 17 ?
     EXHAUST = 18
     INJECTOR_PULSE = 19
-    # 20 ?
+    WATER_TEMP_SENSOR = 20
     THROTTLE = 21
     SPARK = 22
     # 23 ?
@@ -48,7 +56,7 @@ class Frame:
     KNOCK = 27
     # 28 ?
     STARTER = 29
-    # 30 ? Error Codes
+    ERROR_CODES = 30
 
     injector_map = {
         "injector 1": 2,
@@ -113,17 +121,15 @@ class Frame:
     def vacuum(self):
         return self.atmosphere - self.map
 
-    @property
     def isInjectorShort(self, num):
         if num < 1 or num > 6:
             raise InvalidInjectorIndex("{}".format(num))
-        return bitRead(self.frame[Frame.INJECTOR_SHORT], self.injector_map["injector {}".format(num)])
+        return bool(bitRead(self.frame[Frame.INJECTOR_SHORT], self.injector_map["injector {}".format(num)]))
 
-    @property
     def isInjectorOpen(self, num):
         if num < 1 or num > 6:
             raise InvalidInjectorIndex("{}".format(num))
-        return bitRead(self.frame[Frame.INJECTOR_OPEN], self.injector_map["injector {}".format(num)])
+        return bool(bitRead(self.frame[Frame.INJECTOR_OPEN], self.injector_map["injector {}".format(num)]))
 
     @property
     def exhaust(self):
@@ -174,3 +180,32 @@ class Frame:
     @property
     def nss(self):
         raise NotImplementedError("nss not implemented")
+
+    def errors(self):
+        errors = []
+        for injNum, injName in enumerate(self.injector_map):
+            if self.isInjectorOpen(injNum):
+                errors += {'error': ErrorCodes.INJECTOR_OPEN, 'info': injName}
+            if self.isInjectorShort(injNum):
+                errors += {'error': ErrorCodes.INJECTOR_SHORT, 'info': injName}
+        if bitRead(self.frame[Frame.WATER_TEMP_SENSOR], 1) != 0:
+            errors += {'error': ErrorCodes.WATER_TEMP_SENSOR}
+
+        error_bit_map = {
+            ErrorCodes.ICM_SIGNAL_OPEN: 0,
+            ErrorCodes.EGR_SOLENOID_OPEN: 2,
+            ErrorCodes.BPLUS_RELAY_OPEN: 4,
+            ErrorCodes.O2_RELAY_OPEN: 5,
+            ErrorCodes.AC_RELAY_OPEN: 6
+        }
+
+        for err, bit in error_bit_map.items():
+            if bitRead(self.frame[Frame.ERROR_CODES], bit) != 0:
+                errors += {'error': err}
+
+        return errors
+
+
+# TODO : translate 2.5L data stream
+class TwoPointFiveLiterFrame(Frame):
+    pass

@@ -6,6 +6,7 @@ from config import loggers
 import logging.config
 import logging
 from publish import publish_frame
+from receiver.receive import ECUType
 
 logging.config.dictConfig(loggers)
 
@@ -43,10 +44,14 @@ logging.config.dictConfig(loggers)
 
 # main loop
 # open the serial interface, create a receive.Receiver
-def start_receiving(interface):
+def start_receiving(interface, baudrate=None):
 
-    s = serial.Serial(interface, baudrate=62500)
-    r = Receiver(frame_receiver=publish_frame)
+    kwargs = {}
+    if baudrate:
+        kwargs['baudrate'] = baudrate
+
+    s = serial.Serial(interface, **kwargs)
+    r = Receiver(frame_receiver=publish_frame, ecu_type=ECUType.FourLiter)
 
     while True:
         # check if there's data
@@ -63,7 +68,8 @@ if __name__ == "__main__":
     # require a serial interface as a parameter
     parser = argparse.ArgumentParser()
     parser.add_argument('interface')
+    parser.add_argument('-b', '--baudrate')
     args = parser.parse_args()
 
     # begin receiving data
-    start_receiving(args.interface)
+    start_receiving(args.interface, args.baudrate)

@@ -91,7 +91,7 @@ class SparkAdvance:
 
 
 def bitRead(raw, bit):
-    return (raw >> bit) & b'0x1'
+    return (raw >> bit) & 0x01
 
 
 class IdleAirControl:

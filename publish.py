@@ -28,4 +28,4 @@ def publish_frame(frame):
     try:
         single("ecu", json.dumps(info))
     except ConnectionRefusedError:
-        print("could not connect to mqtt")
+        logger.error("could not connect to mqtt")

@@ -5,6 +5,7 @@ from time import sleep
 from config import loggers
 import logging.config
 import logging
+import toml
 from publish import publish_frame
 from receiver.receive import ECUType
 
@@ -44,9 +45,10 @@ logging.config.dictConfig(loggers)
 
 # main loop
 # open the serial interface, create a receive.Receiver
-def start_receiving(interface, baudrate=None):
+def start_receiving(interface=None, baudrate=None):
 
     kwargs = {}
+
     if baudrate:
         kwargs['baudrate'] = baudrate
 
@@ -67,9 +69,20 @@ if __name__ == "__main__":
 
     # require a serial interface as a parameter
     parser = argparse.ArgumentParser()
-    parser.add_argument('interface')
-    parser.add_argument('-b', '--baudrate')
+    alt = parser.add_mutually_exclusive_group(required=False)
+
+    alt.add_argument('-c', '--config')
+
+    items = alt.add_argument_group('items', 'individual command line arguments')
+    items.add_argument('-i', '--interface')
+    items.add_argument('-b', '--baudrate')
+
     args = parser.parse_args()
 
-    # begin receiving data
-    start_receiving(args.interface, args.baudrate)
+    if args.interface:
+        start_receiving(args.interface, args.baudrate)
+    elif args.config:
+        toml = toml.load(args.config)
+        start_receiving(toml['renix']['uart'], toml['renix']['baudrate'])
+    else:
+        exit("needed options not provided")

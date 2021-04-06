@@ -82,7 +82,7 @@ if __name__ == "__main__":
     if args.interface:
         start_receiving(args.interface, args.baudrate)
     elif args.config:
-        toml = toml.load(args.config)
-        start_receiving(toml['renix']['uart'], toml['renix']['baudrate'])
+        cfg = toml.load(args.config)
+        start_receiving(cfg['renix']['uart'], cfg['renix']['baudrate'])
     else:
         exit("needed options not provided")

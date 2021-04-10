@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
 
+import argparse
 import subprocess
 import json
 import toml
-import paho.mqtt.client as mqtt
-from prometheus_client import start_http_server, Gauge
+
+from contextlib import suppress
+from paho.mqtt.publish import single
+from prometheus_client import start_http_server, Gauge, REGISTRY
 
 import logging
 logger = logging.getLogger()
+
+# unregister the default promtheus process metrics
+for name in list(REGISTRY._names_to_collectors.values()):
+    with suppress(KeyError):
+        REGISTRY.unregister(name)
+
+
+def on_disconnect(*args, **kwargs):
+    logger.info("client has disconnected")
 
 
 def run():
@@ -15,15 +27,11 @@ def run():
     # load config
     cfg = toml.load("/etc/renix.toml")
     tire_positions = ['lf', 'rf', 'lr', 'rr']
-    tire_map = {cfg['tpms'][position]:position for position in tire_positions}
-
-    # initialize clients
-    mqttc = mqtt.Client("tpms_monitor")
-    mqttc.connect("localhost", 1883)
+    tire_map = {cfg['tpms'][position]: position for position in tire_positions}
 
     tire_pressure_g = Gauge('tire_pressure', 'Tire pressure', ['position', ])
     tire_temp_g = Gauge('tire_temperature', 'Tire temperature', ['position', ])
-    cmd = ["/Users/amirsky/dev/rtl_433/build/src/rtl_433", "-f", "433M", "-F", "json"]
+    cmd = ["/Users/amirsky/dev/rtl_433/build/src/rtl_433", "-f", "315M", "-F", "json", "-C", "customary"]
 
     rtl433 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
@@ -46,7 +54,7 @@ def run():
             data['position'] = tire_position
 
             # send to mosquitto
-            mqttc.publish("tpms", json.dumps(data))
+            single("tpms", json.dumps(data), client_id="tpms_monitor")
 
             # send to prometheus
             if 'pressure_PSI' in data:
@@ -56,6 +64,10 @@ def run():
 
 
 if __name__ == "__main__":
+
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('-p', '--prometheus', type=int, default=8080)
+
     start_http_server(8080)
     run()
 

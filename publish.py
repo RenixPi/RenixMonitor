@@ -1,10 +1,15 @@
 import logging
 import json
-import paho.mqtt.client as mqtt
+from paho.mqtt.publish import single
 from prometheus_client import start_http_server as start_prometheus, Gauge
 
-mqttc = mqtt.Client("ecu_monitor")
-mqttc.connect("localhost", 1883)
+from prometheus_client import REGISTRY
+from contextlib import suppress
+
+
+for name in list(REGISTRY._names_to_collectors.values()):
+    with suppress(KeyError):
+        REGISTRY.unregister(name)
 
 start_prometheus(8081)
 
@@ -28,15 +33,14 @@ logger = logging.getLogger('ecu.publish')
 
 # receive a frame.Frame and convert to json for publishing
 def publish_frame(frame):
-    logger.debug("new frame received")
+    logger.info("new frame received")
 
-    info = {m: frame.get(m) for m in measurements}
-    info['errors'] = frame.errors
-
-    mqttc.publish("ecu", json.dumps(info))
+    info = {m: getattr(frame, m) for m in measurements}
+    info['errors'] = frame.errors()
+    single("ecu", json.dumps(info), client_id="ecu_monitor")
 
     for m in measurements:
-        gauge_map[m].set(frame.get(m))
+        gauge_map[m].set(getattr(frame, m))
 
     #
     # info = {

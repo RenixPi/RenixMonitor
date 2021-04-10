@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from receiver import Receiver
 import argparse
 import serial
@@ -69,6 +71,7 @@ if __name__ == "__main__":
 
     # require a serial interface as a parameter
     parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--prometheus', type=int, default=8081)
     alt = parser.add_mutually_exclusive_group(required=False)
 
     alt.add_argument('-c', '--config')

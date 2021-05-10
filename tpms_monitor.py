@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse
+import os
 import subprocess
 import json
 import toml
@@ -24,14 +24,17 @@ def on_disconnect(*args, **kwargs):
 
 def run():
 
+    rtl433 = os.environ.get("RTL433")
+    renix_cfg = os.environ.get("RENIXCFG", "/etc/renix.toml")
+
     # load config
-    cfg = toml.load("/etc/renix.toml")
+    cfg = toml.load(renix_cfg)
     tire_positions = ['lf', 'rf', 'lr', 'rr']
     tire_map = {cfg['tpms'][position]: position for position in tire_positions}
 
     tire_pressure_g = Gauge('tire_pressure', 'Tire pressure', ['position', ])
     tire_temp_g = Gauge('tire_temperature', 'Tire temperature', ['position', ])
-    cmd = ["/Users/amirsky/dev/rtl_433/build/src/rtl_433", "-f", "315M", "-F", "json", "-C", "customary"]
+    cmd = [rtl433, "-f", "315M", "-F", "json", "-C", "customary"]
 
     rtl433 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
